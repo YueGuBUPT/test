@@ -1,19 +1,28 @@
-/** 
- *  Copyright (c) 2016, Carnegie Mellon University.  All Rights Reserved.
+/**
+ *  The search engine must support multiple retrieval models.  Some
+ *  retrieval models have parameters.  All of them influence the way a
+ *  query operator behaves.  Passing around a retrieval model object
+ *  during query evaluation allows this information to be shared with
+ *  query operators (and nested query operators) conveniently.
+ *
+ *  Copyright (c) 2014, Carnegie Mellon University.  All Rights Reserved.
  */
 
-/**
- *  The root class in the retrieval model hierarchy.  This hierarchy
- *  is used to create objects that provide fast access to retrieval
- *  model parameters and indicate to the query operators how the query
- *  should be evaluated.
- */
 public abstract class RetrievalModel {
 
   /**
-   *  The name of the default query operator for the retrieval model.
-   *  @return The name of the default query operator.
+   *  Set a retrieval model parameter.
+   *  @param parameterName The name of the parameter to set.
+   *  @param parametervalue The parameter's value.
+   *  @return true if the parameter is set successfully, false otherwise.
    */
-  public abstract String defaultQrySopName ();
+  public abstract boolean setParameter (String parameterName, double value);
 
+  /**
+   *  Set a retrieval model parameter.
+   *  @param parameterName The name of the parameter to set.
+   *  @param parametervalue The parameter's value.
+   *  @return true if the parameter is set successfully, false otherwise.
+   */
+  public abstract boolean setParameter (String parameterName, String value);
 }

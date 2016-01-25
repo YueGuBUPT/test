@@ -1,52 +1,54 @@
 /**
- *  Copyright (c) 2016, Carnegie Mellon University.  All Rights Reserved.
- */
-import java.io.*;
-import java.util.*;
-
-/**
  *  This class implements the document score list data structure
  *  and provides methods for accessing and manipulating them.
+ *
+ *  Copyright (c) 2014, Carnegie Mellon University.  All Rights Reserved.
  */
+
+import java.util.*;
+
 public class ScoreList {
 
-  //  A utility class to create a <internalDocid, externalDocid, score>
-  //  object.
+  //  A little utility class to create a <docid, score> object.
 
-  private class ScoreListEntry {
+  protected class ScoreListEntry implements Comparable<ScoreListEntry>{
     private int docid;
-    private String externalId;
     private double score;
+    private String externDocid;
 
-    private ScoreListEntry(int internalDocid, double score) {
-      this.docid = internalDocid;
+    private ScoreListEntry(int docid, double score) {
+      this.docid = docid;
       this.score = score;
-
       try {
-	this.externalId = Idx.getExternalDocid (this.docid);
+    	  this.externDocid = QryEval.getExternalDocid(docid);
       }
-      catch (IOException ex){
-	ex.printStackTrace();
+      catch(Exception e) {
+    	  e.printStackTrace();
       }
+    }
+    
+    // A compare function to sort the ScoreListEntry by score first, then by docid
+    public int compareTo(ScoreListEntry compareEntry) {
+    	double compareScore = compareEntry.score;
+    	if (this.score != compareScore)	return (int)(compareScore - this.score);
+    	return this.externDocid.compareTo(compareEntry.externDocid);
     }
   }
 
-  /**
-   *  A list of document ids and scores. 
-   */
-  private List<ScoreListEntry> scores = new ArrayList<ScoreListEntry>();
+  List<ScoreListEntry> scores = new ArrayList<ScoreListEntry>();
 
   /**
    *  Append a document score to a score list.
    *  @param docid An internal document id.
    *  @param score The document's score.
+   *  @return void
    */
   public void add(int docid, double score) {
     scores.add(new ScoreListEntry(docid, score));
   }
 
   /**
-   *  Get the internal docid of the n'th entry.
+   *  Get the n'th document id.
    *  @param n The index of the requested document.
    *  @return The internal document id.
    */
@@ -55,7 +57,7 @@ public class ScoreList {
   }
 
   /**
-   *  Get the score of the n'th entry.
+   *  Get the score of the n'th document.
    *  @param n The index of the requested document score.
    *  @return The document's score.
    */
@@ -63,63 +65,4 @@ public class ScoreList {
     return this.scores.get(n).score;
   }
 
-  /**
-   *  Set the score of the n'th entry.
-   *  @param n The index of the score to change.
-   *  @param score The new score.
-   */
-  public void setDocidScore(int n, double score) {
-    this.scores.get(n).score = score;
-  }
-
-  /**
-   *  Get the size of the score list.
-   *  @return The size of the posting list.
-   */
-  public int size() {
-    return this.scores.size();
-  }
-
-  /*
-   *  Compare two ScoreListEntry objects.  Sort by score, then
-   *  internal docid.
-   */
-  public class ScoreListComparator implements Comparator<ScoreListEntry> {
-
-    @Override
-    public int compare(ScoreListEntry s1, ScoreListEntry s2) {
-      if (s1.score > s2.score)
-	return -1;
-      else
-	if (s1.score < s2.score)
-	  return 1;
-	else
-	  if (s1.docid > s2.docid)
-	    return 1;
-	  else
-	    if (s1.docid < s2.docid)
-	      return -1;
-	    else
-	      return 0;
-    }
-  }
-
-  /**
-   *  Sort the list by score and external document id.
-   */
-  public void sort () {
-    Collections.sort(this.scores, new ScoreListComparator());
-  }
-  
-  /**
-   * Reduce the score list to the first num results to save on RAM.
-   * 
-   * @param num Number of results to keep.
-   */
-  public void truncate(int num) {
-    List<ScoreListEntry> truncated = new ArrayList<ScoreListEntry>(this.scores.subList(0,
-        Math.min(num, scores.size())));
-    this.scores.clear();
-    this.scores = truncated;
-  }
 }

@@ -1,11 +1,12 @@
 /*
- *  Copyright (c) 2016, Carnegie Mellon University.  All Rights Reserved.
+ *  Copyright (c) 2013, Carnegie Mellon University.  All Rights Reserved.
  */
 
 import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.search.similarities.BasicStats;
 import org.apache.lucene.search.similarities.SimilarityBase;
 import org.apache.lucene.search.similarities.TFIDFSimilarity;
+import org.apache.lucene.util.SmallFloat;
 
 
 public class DocLenStoreSimilarity extends SimilarityBase {
@@ -26,7 +27,11 @@ public class DocLenStoreSimilarity extends SimilarityBase {
   /** Encodes the document length in the same way as {@link TFIDFSimilarity}. */
   @Override
   public long computeNorm(FieldInvertState state) {
-    final float numTerms = state.getPosition();
+    final float numTerms;
+    if (discountOverlaps)
+      numTerms = state.getLength() - state.getNumOverlap();
+    else
+      numTerms = state.getLength();
     return (long)numTerms;
   }
   

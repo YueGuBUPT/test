@@ -1,5 +1,12 @@
 /**
- *  Copyright (c) 2016, Carnegie Mellon University.  All Rights Reserved.
+ *  The TermVector class provides an Indri DocVector-style interface
+ *  for the Lucene termvector.  There are three main data structurs:
+ *    stems:      The field's vocabulary.  The 0'th entry is an empty string.
+ *                It indicates a stopword.
+ *    stemsFreq:  The frequency (tf) of each entry in stems.
+ *    positions:  The index of the stem that occurred at this position. 
+ *
+ *  Copyright (c) 2014, Carnegie Mellon University.  All Rights Reserved.
  */
 
 import java.io.*;
@@ -9,59 +16,26 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 
-/**
- *  An Indri DocVector-style interface for the Lucene termvector.
- *  There are three main data structurs:
- *  <p>
- *  <pre>
- *    stems:      The field's vocabulary.  The 0'th entry is an empty string.
- *                It indicates a stopword.
- *    stemsFreq:  The frequency (tf) of each entry in stems.
- *    positions:  The index of the stem that occurred at this position. 
- *  </pre>
- */
 public class TermVector {
 
-  //  --------------- Constants and variables ---------------------
-
   /**
-   *  The internal id of the document that the TermVector represents.
+   * Class variables.
    */
-  public int docId;
+  Terms luceneTerms;
+  int[] positions;
+  String[] stems;
+  int[] stemsFreq;
+  Term[] terms;
 
   /**
-   *  The name of the field that the TermVector represents.
+   *  Constructor.  Create a TermVector for a field in a document.
+   *  @return {@link TermVector}
    */
-  public String fieldName;
-
-  private int fieldLength;
-  private Terms luceneTerms;
-  private int[] positions;	// Index of the stem that at this position
-  private String[] stems;	// The vocabulary. 0 indicates a stopword
-  private int[] stemsFreq;	// The frequency (tf) of each entry in stems
-  private Term[] terms;
-
-  //  --------------- Methods ---------------------------------------
-
-  /**
-   *  @param docId An internal document id
-   *  @param fieldName The name of a document field.
-   *  @throws IOException Error accessing the Lucene index
-   **/
   public TermVector(int docId, String fieldName) throws IOException {
-    this.docId = docId;
-    this.fieldName = fieldName;
-    this.fieldLength = 0;
 
-    //  Fetch the term vector, if one exists.
+    //  Fetch the term vector.
 
-    this.luceneTerms = Idx.INDEXREADER.getTermVector(docId, fieldName);
-
-    //  If Lucene doesn't have a term vector, our TermVector is empty.
-    
-    if (this.luceneTerms == ((Terms) null)) {
-      return;
-    }
+    this.luceneTerms = QryEval.READER.getTermVector(docId, fieldName);
 
     //  Allocate space for stems. The 0'th stem indicates a stopword.
 
@@ -76,12 +50,11 @@ public class TermVector {
 
     TermsEnum ithTerm = this.luceneTerms.iterator(null);
     
-    int lastPosition = 0;
+    int positionsLength = 0;
     for (int i = 1; ithTerm.next() != null; i++) {
       stems[i] = ithTerm.term().utf8ToString();
       terms[i] = new Term(fieldName, ithTerm.term().utf8ToString());
       stemsFreq[i] = (int) ithTerm.totalTermFreq();
-      fieldLength += stemsFreq[i]; 
 
       //  Find the position of the last (indexed) term in the
       //  document, so that the positions array can be created and
@@ -95,12 +68,14 @@ public class TermVector {
       for (int j = 0; j < ithPositions.freq() - 1; j++)
         ithPositions.nextPosition();
 
-      lastPosition = Math.max(lastPosition, ithPositions.nextPosition());
+      positionsLength = Math.max(positionsLength, ithPositions.nextPosition());
     }
 
-    // Create and fill the positions array. Since we have position indexes, the array's size needs 
-    // to be one bigger than the biggest position.
-    positions = new int[lastPosition + 1];
+    //  Create and fill the positions array. Note that the stems array
+    //  uses stem 0 to indicate a stopword, so "real" stems have
+    //  indexs 1 through length+1.
+
+    positions = new int[positionsLength + 1];
 
     ithTerm = this.luceneTerms.iterator(null);
 
@@ -115,29 +90,11 @@ public class TermVector {
   }
 
   /**
-   *  Get the index of stem in the stems vector, or -1 if the stems
-   *  vector does not contain the stem.  
-   *  @param stem The stem to search for.
-   *  @return the index of the stem in the stems vector, or -1 if it does not occur.
-   */
-  public int indexOfStem (String stem) {
-    
-    for (int s=1; s<this.stems.length; s++)
-      if (stem.equals (this.stems [s]))
-	return s;
-    
-    return -1;
-  }
-
-  /**
    *  Get the number of positions in this field (the length of the
    *  field). If positions are not stored, it returns 0.
    *  @return The number of positionsin this field (the field length).
    */
   public int positionsLength() {
-    if (this.fieldLength == 0)
-      return 0;
-
     return this.positions.length;
   }
 
@@ -181,13 +138,10 @@ public class TermVector {
   }
 
   /**
-   *  The number of unique stems in this field.
+   * The number of unique stems in this field.
    *  @return The number of unique stems in this field.
    */
   public int stemsLength() {
-    if (this.fieldLength == 0)
-      return 0;
-
     return this.stems.length;
   }
   
@@ -195,20 +149,20 @@ public class TermVector {
    * Returns ctf of the i'th stem.
    * @param i Index of the stem.
    * @return ctf of the stem.
-   * @throws IOException  Error accessing the Lucene index
+   * @throws IOException.
    */
   public long totalStemFreq(int i) throws IOException {
-    return Idx.INDEXREADER.totalTermFreq(terms[i]);
+    return QryEval.READER.totalTermFreq(terms[i]);
   }
   
   /**
    * Returns the df of the i'th stem.
    * @param i Index of the stem.
    * @return cft of the stem.
-   * @throws IOException Error accessing the Lucene index
+   * @throws IOException.
    */
   public int stemDf(int i) throws IOException {
-    return Idx.INDEXREADER.docFreq(terms[i]);
+    return QryEval.READER.docFreq(terms[i]);
   }
   
 }

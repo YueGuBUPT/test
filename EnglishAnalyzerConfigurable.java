@@ -104,7 +104,6 @@ public final class EnglishAnalyzerConfigurable extends StopwordAnalyzerBase {
 
   /**
    * Enable or disable the conversion of text to lower case.
-   * @param onOff If true, convert text to lower case, otherwise don't.
    */
   public void setLowercase(Boolean onOff) {
     this.doLowerCase = onOff;
@@ -112,7 +111,6 @@ public final class EnglishAnalyzerConfigurable extends StopwordAnalyzerBase {
 
   /**
    * Enable or disable stopword removal.
-   * @param onOff If true, remove stopwords, otherwise don't.
    */
   public void setStopwordRemoval(Boolean onOff) {
     this.doStopwordRemoval = onOff;
@@ -120,7 +118,6 @@ public final class EnglishAnalyzerConfigurable extends StopwordAnalyzerBase {
 
   /**
    * Control whether and how stemming is done. See StemmerType.
-   * @param s the stemmer type
    */
   public void setStemmer(StemmerType s) {
     this.stemmer = s;

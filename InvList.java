@@ -1,5 +1,10 @@
 /**
- *  Copyright (c) 2016, Carnegie Mellon University.  All Rights Reserved.
+ *  This class implements the inverted list data structure and
+ *  provides methods for accessing and manipulating inverted lists.
+ *  Its purpose is to provide a simpler view of inverted lists than
+ *  Lucene's native implementation.
+ *
+ *  Copyright (c) 2014, Carnegie Mellon University.  All Rights Reserved.
  */
 
 import java.util.*;
@@ -9,62 +14,14 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.util.*;
 import org.apache.lucene.search.*;
 
-/**
- *  This class implements the inverted list data structure and
- *  provides methods for accessing and manipulating inverted lists.
- *  Its purpose is to provide a simpler view of inverted lists than
- *  Lucene's native implementation.
- */
 public class InvList {
 
-  //  --------------- Constants and variables -----------------------
+  //  Utility class that makes it easier to construct postings.
 
-  /**
-   *  Collection term frequency: The number of times that a term
-   *  occurs across all instances of the specified field.
-   */
-  public int ctf = 0;
-
-  /**
-   *  Document frequency: The number of documents that have the term
-   *  in the specified field.
-   */
-  public int df = 0;
-
-  /**
-   *  The field covered by the inverted list.
-   */
-  public String field;
-
-  /**
-   *  Postings that contain information about the occurrence of the
-   *  term in individual documents.
-   */
-  public Vector<DocPosting> postings = new Vector<DocPosting>();
-
-  //  --------------- Nested classes --------------------------------
-
-  /**
-   *  Utility class that makes it easier to construct postings.
-   */
   public class DocPosting {
 
-    /**
-     *  The internal id of a document that contains the term in
-     *  the specified field.
-     */
     public int docid = 0;
-
-    /**
-     *  Term frequency:  The number of times the term occurs in
-     *  the specified field of the document.
-     */
     public int tf = 0;
-
-    /**
-     *  The locations where the term occurs in the specified field
-     *  of the document.
-     */
     public Vector<Integer> positions = new Vector<Integer>();
 
     public DocPosting(int d, int... locations) {
@@ -82,7 +39,12 @@ public class InvList {
     }
   }
 
-  //  --------------- Methods ---------------------------------------
+  //  Class variables.
+
+  public int ctf = 0;
+  public int df = 0;
+  public String field;
+  public Vector<DocPosting> postings = new Vector<DocPosting>();
 
   /**
    *  Constructor.  An empty inverted list. Useful for some query operators.
@@ -91,18 +53,17 @@ public class InvList {
   }
 
   /**
-   *  Get an empty inverted list.
-   *  @param fieldString The field that the term occurs in.
+   *  Constructor.
    */
   public InvList(String fieldString) {
     this.field = new String (fieldString);
   }
 
   /**
-   *  Get an inverted list from the index.
+   *  Fetch an inverted list from the index.
    *  @param termString The processed (stemmed, lower-cased, etc) term string.
    *  @param fieldString The field that the term occurs in.
-   *  @throws IOException Error accessing the Lucene index.
+   *  @throws IOException
    */
   public InvList(String termString, String fieldString) throws IOException {
 
@@ -115,14 +76,14 @@ public class InvList {
     BytesRef termBytes = new BytesRef(termString);
     Term term = new Term(fieldString, termBytes);
 
-    if (Idx.INDEXREADER.docFreq(term) < 1)
+    if (QryEval.READER.docFreq(term) < 1)
       return;
 
     //  Lookup the inverted list.
 
     DocsAndPositionsEnum iList =
-      MultiFields.getTermPositionsEnum(Idx.INDEXREADER,
-				       MultiFields.getLiveDocs(Idx.INDEXREADER),
+      MultiFields.getTermPositionsEnum(QryEval.READER,
+				       MultiFields.getLiveDocs(QryEval.READER),
 				       fieldString, termBytes);
 
     //  Copy from Lucene inverted list format to our inverted list
@@ -147,9 +108,9 @@ public class InvList {
   /**
    *  Append a posting to the posting list.  Posting must be appended
    *  in docid order, otherwise this method fails.
-   *  @param docid The internal document id of the posting.
+   *  @param n The posting internal document id.
    *  @param positions A list of positions where the term occurs.
-   *  @return true if the posting was added successfully, otherwise false.
+   *  @result true if the posting was added successfully, otherwise false.
    */
   public boolean appendPosting (int docid, List<Integer> positions) {
     
@@ -170,11 +131,11 @@ public class InvList {
 
   /**
    *  Get the n'th document id from the inverted list.
-   *  @param docid The index of the requested document.
+   *  @param n The index of the requested document.
    *  @return The internal document id.
    */
-  public int getDocid(int docid) {
-    return this.postings.get(docid).docid;
+  public int getDocid(int n) {
+    return this.postings.get(n).docid;
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Carnegie Mellon University.  All Rights Reserved.
+ *  Copyright (c) 2013, Carnegie Mellon University.  All Rights Reserved.
  */
 
 import java.io.IOException;
@@ -19,7 +19,7 @@ public class DocLengthStore  {
   private  Map<String, NumericDocValues> values = new HashMap<String, NumericDocValues>();
 
   /**
-   * @param reader IndexReader object created in {@link Idx}.
+   * @param reader IndexReader object created in {@link QryEval}.
    */
   public DocLengthStore(IndexReader reader) throws IOException {
     this.reader = reader;
